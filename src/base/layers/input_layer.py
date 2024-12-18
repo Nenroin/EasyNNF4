@@ -14,7 +14,7 @@ class InputLayer(Layer):
             neurons=neurons,
             activation=linear(),
             prev_weights_initializer=none_weights_initializer(),
-            is_trainable=False,
+            is_trainable=False
         )
 
     # Y = X * W

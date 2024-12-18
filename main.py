@@ -10,16 +10,16 @@ from src.base.optimizers import Adam
 from src.libs.data_loader import DataLoader
 from src.libs.result_plotter import ResultPlotter
 
-train_dataset_size = 64
-test_dataset_size = 32
-input_neurons = 10
-batch_size = 8
+train_dataset_size = 128
+test_dataset_size = 64
+input_neurons = 8
+batch_size = 1
 periods_in_train_dataset = 1
 
-lr = 0.0001
-epochs=200000
-stacked_layers = 2
-state_size = 8
+lr = 0.001
+epochs=500
+stacked_layers = 1
+state_size = 4
 time_steps = 4
 
 
@@ -32,6 +32,15 @@ data_loader = DataLoader(
     batch_size=batch_size,
     periods_in_train_dataset=periods_in_train_dataset,
 )
+
+data_loader.show_stage_1()
+print()
+data_loader.show_stage_2()
+print()
+data_loader.show_stage_3()
+print()
+print("Stage 4: train & test model")
+
 data_source = data_loader.get_data_source()
 
 model = SequentialModel(
@@ -54,7 +63,7 @@ model.fit(
     callbacks=[
         ProgressBarCallback(
             monitors=['average_loss'],
-            monitor_formatters={'average_loss': lambda val: f'{val:.3e}'}
+            monitor_formatters={'average_loss': lambda val: f'{val}'}
         ),
         EarlyStoppingCallback(
             mode='min',
@@ -68,14 +77,12 @@ model.fit(
 
 ResultPlotter.visualize_models(
     data_loader=data_loader,
-    models=[model],
-    max_timesteps=time_steps,
-    predict_mode='test'
-)
-
-ResultPlotter.visualize_models(
-    data_loader=data_loader,
-    models=[model],
-    max_timesteps=time_steps,
-    predict_mode='all'
+    models=[
+        model
+    ],
+    max_time_steps=time_steps,
+    predict_modes=[
+        'test',
+    ],
+    loss_title_mode='test'
 )

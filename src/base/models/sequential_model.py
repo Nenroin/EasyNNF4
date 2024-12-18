@@ -122,6 +122,7 @@ class SequentialModel(Model, ABC):
 
         self.optimizer.clear_state()
         self.metrics.clear_state()
+
         for i, (x_batch, e_batch) in enumerate(test_data):
             callbacks.on_test_batch_start(i)
 
