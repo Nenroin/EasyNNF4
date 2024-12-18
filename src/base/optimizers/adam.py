@@ -20,8 +20,9 @@ class Adam(Optimizer):
         self.parameters_v = None
 
     def clear_state(self):
-        self.parameters_m = None
-        self.parameters_v = None
+        pass
+        #self.parameters_m = None
+        #self.parameters_v = None
 
     def next_step(self):
         if self.parameters_m is None and self.parameters_v is None:

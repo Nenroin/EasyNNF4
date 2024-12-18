@@ -4,8 +4,8 @@ from src.base.data import ModelDataSource
 
 
 def function(in_data):
-    return np.sin(in_data)
-
+    #return  np.sin(in_data)
+    return np.sin(in_data) + np.cos(2 * in_data) * np.sin(in_data)
 
 class DataLoader:
     def __init__(

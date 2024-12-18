@@ -1,4 +1,4 @@
-from src.base.activation import linear, sigmoid
+from src.base.activation import linear, sigmoid, relu, arctan, softmax
 from src.base.callbacks.default_callbacks import ProgressBarCallback
 from src.base.callbacks.default_callbacks.early_stopping_callback import EarlyStoppingCallback
 from src.base.layers import LinearLayer, InputLayer
@@ -9,6 +9,9 @@ from src.base.models import SequentialModel
 from src.base.optimizers import Adam
 from src.libs.data_loader import DataLoader
 from src.libs.result_plotter import ResultPlotter
+
+"""
+-----------------sin()
 
 train_dataset_size = 128
 test_dataset_size = 64
@@ -21,6 +24,18 @@ epochs=500
 stacked_layers = 1
 state_size = 4
 time_steps = 4
+"""
+train_dataset_size = 128
+test_dataset_size = 64
+input_neurons = 8
+batch_size = 1
+periods_in_train_dataset = 1
+
+lr = 0.01
+epochs=500
+stacked_layers = 1
+state_size = 32
+time_steps = train_dataset_size//2
 
 
 data_loader = DataLoader(
@@ -31,6 +46,7 @@ data_loader = DataLoader(
     time_steps=time_steps,
     batch_size=batch_size,
     periods_in_train_dataset=periods_in_train_dataset,
+
 )
 
 data_loader.show_stage_1()
@@ -43,13 +59,26 @@ print("Stage 4: train & test model")
 
 data_source = data_loader.get_data_source()
 
+# arctan() sigmoid() softmax() linear() relu()
+
 model = SequentialModel(
     layers=[
         InputLayer(input_neurons),
-        ElmanLayer(state_size, activation=sigmoid(), stacked_layers=stacked_layers),
+        ElmanLayer(state_size, activation=arctan(), stacked_layers=stacked_layers),
         LinearLayer(1, activation=linear())
     ]
 )
+
+"""
+-----------------sin()
+model = SequentialModel(
+    layers=[
+        InputLayer(input_neurons),
+        ElmanLayer(state_size, activation=linear(), stacked_layers=stacked_layers),
+        LinearLayer(1, activation=linear())
+    ]
+)
+"""
 
 model.build(
     loss_function=mse(),
