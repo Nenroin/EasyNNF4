@@ -50,31 +50,19 @@ class ResultPlotter:
             plt.subplot(len(models), 1, i + 1)
             plt.axvline(x=data_loader.get_test_abscissas()[0], color='g', label='test')
 
-            def build_sequences(nn_output_values):
-                nn_sequences = []
-                for j in range(input_neurons, len(nn_output_values) + 1):
-                    nn_sequences.append(nn_output_values[j - input_neurons:j])
-                return np.expand_dims(np.array(nn_sequences), axis=0)
-
-            overall_loss = 0
-            iterations = 0
+            average_loss = 0
 
             for predict_params in predicts_params:
                 mode, test_abscissas, test_ordinates, predict_color = predict_params.values()
 
-                nn_output = list(test_ordinates[:input_neurons])
-                for j in range(input_neurons, len(test_abscissas)):
-                    nn_in_vector = build_sequences(nn_output)[:, -max_time_steps:, :]
-                    nn_output_vector = model.forward(nn_in_vector)
-                    nn_output.append(nn_output_vector.item((0, -1, 0)))
+                nn_output, av_loss = ResultPlotter.get_predicted_data(model, test_ordinates)
 
-                    if mode == loss_title_mode:
-                        overall_loss += np.power(nn_output[-1] - test_ordinates[j], 2).sum() / 2
-                        iterations += 1
+                if mode == loss_title_mode:
+                    average_loss = av_loss
 
                 predict_params['test_ordinates'] = nn_output
 
-            plt.title(model.name + f'   average_{loss_title_mode}_loss = {overall_loss / iterations}')
+            plt.title(model.name + f'   average_{loss_title_mode}_loss = {average_loss}')
             plt.plot(abscissas, ordinates, 'b')
 
             for predict_params in predicts_params:
@@ -82,3 +70,29 @@ class ResultPlotter:
                 plt.plot(test_abscissas, test_ordinates, predict_color, linestyle='dashed')
 
         plt.show()
+
+    @staticmethod
+    def get_predicted_data(model, ordinates, max_timesteps=999999):
+        input_neurons = model.layers[0].neurons
+
+        def build_sequences(nn_output_values):
+            nn_sequences = []
+            for j in range(input_neurons, len(nn_output_values) + 1):
+                nn_sequences.append(nn_output_values[j - input_neurons:j])
+            return np.expand_dims(np.array(nn_sequences), axis=0)
+
+
+        overall_loss = 0
+        iterations = 0
+
+        nn_output = list(ordinates[:input_neurons])
+        for j in range(input_neurons, len(ordinates)):
+            nn_in_vector = build_sequences(nn_output)[:, -max_timesteps:, :]
+            nn_output_vector = model.forward(nn_in_vector)
+            nn_output.append(nn_output_vector.item((0, -1, 0)))
+            overall_loss += np.power(nn_output[-1] - ordinates[j], 2).sum() / 2
+            iterations += 1
+
+        average_loss = overall_loss / iterations
+
+        return nn_output, average_loss

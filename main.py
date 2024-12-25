@@ -26,15 +26,15 @@ state_size = 4
 time_steps = 4
 """
 train_dataset_size = 128
-test_dataset_size = 64
+test_dataset_size = 128
 input_neurons = 8
 batch_size = 1
 periods_in_train_dataset = 1
 
 lr = 0.01
-epochs=500
+epochs=50000
 stacked_layers = 1
-state_size = 32
+state_size = 24
 time_steps = train_dataset_size//2
 
 
@@ -95,11 +95,11 @@ model.fit(
             monitor_formatters={'average_loss': lambda val: f'{val}'}
         ),
         EarlyStoppingCallback(
-            mode='min',
-            monitor='average_loss',
-            compare_with='previous',
-            patience=10,
-            start_from_epoch=10,
+             mode='min',
+             monitor='average_loss',
+             compare_with='previous',
+             patience=10,
+             start_from_epoch=10,
         )
     ],
 )
@@ -111,7 +111,8 @@ ResultPlotter.visualize_models(
     ],
     max_time_steps=time_steps,
     predict_modes=[
-        'test',
+        'train',
+        'test'
     ],
     loss_title_mode='test'
 )

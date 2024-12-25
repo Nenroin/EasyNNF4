@@ -40,7 +40,7 @@ class DataLoader:
         self.dataset_size = self.train_dataset_size + self.test_dataset_size
         self.dataset_points_count = self.train_points_count + self.test_points_count
 
-        self.abscissas = np.array([periods_in_train_dataset * x * period / (self.train_points_count - 1)
+        self.abscissas = np.array([periods_in_train_dataset * x * period / self.train_points_count
                                    for x in range(self.dataset_points_count)])
 
         self.ordinates = function(self.abscissas)

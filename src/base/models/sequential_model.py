@@ -52,17 +52,17 @@ class SequentialModel(Model, ABC):
             callbacks.on_epoch_start(epoch)
 
             self.train_epoch(train_data, callbacks=callbacks, epoch=epoch)
-            self.test_epoch(test_data, callbacks=callbacks, epoch=epoch)
+            self.custom_test_epoch(test_data, callbacks=callbacks, epoch=epoch)
 
             callbacks.on_epoch_end(epoch)
 
             # stop if stop_training flag was set in callbacks
             if self.stop_training:
                 break
+
         callbacks.on_fit_end()
 
-    def train_epoch(
-            self,
+    def train_epoch(self,
             train_data: DataBatchWrapper,
             callbacks: CallbackList or [Callback] = None,
             epoch: int = 1,
@@ -103,6 +103,41 @@ class SequentialModel(Model, ABC):
                 break
 
         callbacks.on_train_epoch_end(epoch, self.metrics.get_metric_state())
+
+    def custom_test_epoch(self,
+                          test_data: DataBatchWrapper,
+                          callbacks: CallbackList or [Callback] = None,
+                          epoch: int = 1):
+        if not isinstance(callbacks, CallbackList):
+            callbacks = CallbackList(
+                model=self,
+                callbacks=callbacks,
+                test_batches=len(test_data),
+                batch_size=test_data.batch_size,
+            )
+
+        callbacks.on_test_epoch_start(epoch)
+
+        self.metrics.clear_state()
+
+        flatten_in_data = test_data.data_x.reshape(-1, test_data.data_x.shape[-1])
+        flatten_out_data = test_data.data_y.reshape(-1)
+        ordinates = np.hstack((flatten_in_data[0], flatten_out_data))
+
+        nn_outputs, _ = self.get_predicted_data(ordinates)
+
+        nn_outputs = nn_outputs[self.layers[0].neurons:]
+        ordinates = ordinates[self.layers[0].neurons:]
+
+        nn_outputs_batched = np.array(nn_outputs).reshape(-1, test_data.batch_size, 1)
+        ordinates_batched = np.array(ordinates).reshape(-1, test_data.batch_size, 1)
+
+        for i in range(len(nn_outputs_batched)):
+            callbacks.on_test_batch_start(i)
+            [self.metrics.update_state(y, e) for y, e in zip(nn_outputs_batched[i], ordinates_batched[i])]
+            callbacks.on_test_batch_end(i, self.metrics.get_metric_state())
+
+        callbacks.on_test_epoch_end(epoch, self.metrics.get_metric_state())
 
     def test_epoch(
             self,
@@ -165,3 +200,29 @@ class SequentialModel(Model, ABC):
     def summary(self):
         for layer in self.layers:
             print(f"Layer name: {layer.name} Neurons: {layer.neurons} Activation: {layer.activation.name}")
+
+    def get_predicted_data(self, ordinates, max_timesteps=999999):
+        input_neurons = self.layers[0].neurons
+
+        def build_sequences(nn_output_values):
+            nn_sequences = []
+            for j in range(input_neurons, len(nn_output_values) + 1):
+                nn_sequences.append(nn_output_values[j - input_neurons:j])
+            return np.expand_dims(np.array(nn_sequences), axis=0)
+
+
+        overall_loss = 0
+        iterations = 0
+
+        nn_output = list(ordinates[:input_neurons])
+        for j in range(input_neurons, len(ordinates)):
+            nn_in_vector = build_sequences(nn_output)[:, -max_timesteps:, :]
+            nn_output_vector = self.forward(nn_in_vector)
+            nn_output.append(nn_output_vector.item((0, -1, 0)))
+
+            overall_loss += np.power(nn_output[-1] - ordinates[j], 2).sum() / 2
+            iterations += 1
+
+        average_loss = overall_loss / iterations
+
+        return nn_output, average_loss

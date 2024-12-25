@@ -75,7 +75,7 @@ class EarlyStoppingCallback(Callback):
         if self.has_monitor_improved(monitor_val, self.referenced_val()):
             self.epochs_without_improvement = 0
 
-        if self.epochs_without_improvement > self.patience:
+        if monitor_val < 0.0009:
             self.model.stop_training = True
             if self.show_message:
                 print(f'Early stopping at epoch {epoch+1}')
